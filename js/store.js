@@ -16,6 +16,7 @@ export function initStoreForUser(username) {
         POMODORO: prefix + 'pomodoro',
         SETTINGS: prefix + 'settings',
         REMINDERS: prefix + 'reminders',
+        EXAMS: prefix + 'exams',
         TIMER_SETTINGS: prefix + 'timer_settings',
         MOODS: prefix + 'moods',
         TODOS: prefix + 'todos'
