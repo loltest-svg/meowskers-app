@@ -10,7 +10,8 @@ import {
   loadReminders, saveReminders,
   loadExams, saveExams,
   loadTimerSettings, saveTimerSettings,
-  loadMoods, saveMoods
+  loadMoods, saveMoods,
+  loadTodos, saveTodos
 } from './store.js';
 import {
   generateId, getTodayStr, getWeekDates, getLast7Days, getStreak,
@@ -22,7 +23,7 @@ import {
 let state = {
   currentUser: null,
   currentPage: 'dashboard',
-  roadmap: null, habits: null, pomodoro: null, reminders: null, exams: null, timerSettings: null, moods: null,
+  roadmap: null, habits: null, pomodoro: null, reminders: null, exams: null, timerSettings: null, moods: null, todos: null,
   selectedNode: null, expandedNodes: new Set(), activeRoadmapTab: null,
   timerMode: 'focus', timerSeconds: 0, timerRunning: false, timerInterval: null, pomodoroCount: 0
 };
@@ -37,6 +38,7 @@ function initAppState(username) {
   state.reminders = loadReminders();
   state.exams = loadExams();
   state.moods = loadMoods();
+  state.todos = loadTodos();
 
   state.timerSeconds = state.timerSettings.focus * 60;
 
@@ -292,6 +294,29 @@ function renderDashboard() {
               <button class="btn btn-icon btn-sm btn-danger" data-action="delete-exam" data-exam-id="${e.id}" style="width:22px;height:22px;font-size:0.6rem;">✕</button>
             </div>`).join('')}
         </div>` : ''}
+    </div>
+
+    <div class="card" style="margin-bottom:var(--space-lg);">
+      <div class="card-header">
+        <span class="card-title">✏️ To-Do List</span>
+        <span style="font-size:0.75rem;color:var(--text-muted);">${state.todos.filter(t => !t.done).length} remaining</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;">
+        <input type="text" id="todo-input" placeholder="What needs to be done?" style="flex:1;">
+        <button class="btn btn-primary btn-sm" data-action="add-todo" style="white-space:nowrap;">+ Add</button>
+      </div>
+      ${state.todos.length === 0 ? `<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;padding:16px 0;">No tasks yet. Add something above! 🐾</p>` : `
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${state.todos.map(t => `
+            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-input);border-radius:var(--radius-md);transition:all 0.2s;${t.done ? 'opacity:0.55;' : ''}">
+              <button class="habit-toggle ${t.done ? 'done' : ''}" data-action="toggle-todo" data-todo-id="${t.id}" style="flex-shrink:0;">${t.done ? '✓' : ''}</button>
+              <span style="flex:1;font-size:0.88rem;${t.done ? 'text-decoration:line-through;color:var(--text-muted);' : ''}">${t.text}</span>
+              <button class="btn btn-icon btn-sm btn-danger" data-action="delete-todo" data-todo-id="${t.id}" style="width:22px;height:22px;font-size:0.6rem;flex-shrink:0;">✕</button>
+            </div>
+          `).join('')}
+        </div>
+        ${state.todos.some(t => t.done) ? `<button class="btn btn-sm" data-action="clear-done-todos" style="margin-top:10px;font-size:0.75rem;width:100%;">🧹 Clear completed</button>` : ''}
+      `}
     </div>
 
     <div class="dashboard-grid">
@@ -949,6 +974,14 @@ function initEventListeners() {
           saveRoadmap(state.roadmap);
           render();
         }
+      } else if (e.target.id === 'todo-input') {
+        e.preventDefault();
+        const input = e.target;
+        if (input.value.trim()) {
+          state.todos.unshift({ id: generateId(), text: input.value.trim(), done: false, createdAt: new Date().toISOString() });
+          saveTodos(state.todos);
+          render();
+        }
       } else if (e.target.id === 'modal-node-title' || e.target.id === 'modal-roadmap-title' || e.target.id === 'modal-habit-name') {
         e.preventDefault();
         const confirmBtn = document.getElementById('modal-confirm');
@@ -1135,6 +1168,42 @@ function handleAction(action, el) {
       };
       saveTimerSettings(state.timerSettings);
       resetTimer();
+      break;
+    }
+
+    case 'add-todo': {
+      const input = document.getElementById('todo-input');
+      if (input && input.value.trim()) {
+        state.todos.unshift({ id: generateId(), text: input.value.trim(), done: false, createdAt: new Date().toISOString() });
+        saveTodos(state.todos);
+        render();
+      }
+      break;
+    }
+
+    case 'toggle-todo': {
+      const todoId = el.dataset.todoId;
+      const todo = state.todos.find(t => t.id === todoId);
+      if (todo) {
+        todo.done = !todo.done;
+        saveTodos(state.todos);
+        render();
+      }
+      break;
+    }
+
+    case 'delete-todo': {
+      const todoId = el.dataset.todoId;
+      state.todos = state.todos.filter(t => t.id !== todoId);
+      saveTodos(state.todos);
+      render();
+      break;
+    }
+
+    case 'clear-done-todos': {
+      state.todos = state.todos.filter(t => !t.done);
+      saveTodos(state.todos);
+      render();
       break;
     }
 

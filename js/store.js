@@ -17,7 +17,8 @@ export function initStoreForUser(username) {
         SETTINGS: prefix + 'settings',
         REMINDERS: prefix + 'reminders',
         TIMER_SETTINGS: prefix + 'timer_settings',
-        MOODS: prefix + 'moods'
+        MOODS: prefix + 'moods',
+        TODOS: prefix + 'todos'
     };
 }
 
@@ -82,6 +83,12 @@ export function loadMoods() {
     return loadData(KEYS.MOODS) || [];
 }
 export function saveMoods(data) { saveData(KEYS.MOODS, data); }
+
+// --- Todos ---
+export function loadTodos() {
+    return loadData(KEYS.TODOS) || [];
+}
+export function saveTodos(data) { saveData(KEYS.TODOS, data); }
 
 // --- Seed Exams ---
 function getSeedExams() {
