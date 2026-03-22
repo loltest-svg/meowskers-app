@@ -1317,14 +1317,22 @@ function switchTimerMode(mode) {
 
 function toggleTimer() {
   if (state.timerRunning) {
+    // Pause: calculate how much time has actually elapsed
+    const elapsed = Math.floor((Date.now() - state.timerStartedAt) / 1000);
+    state.timerSeconds = Math.max(0, state.timerSecondsAtStart - elapsed);
     clearInterval(state.timerInterval);
     state.timerRunning = false;
     render();
   } else {
+    // Start/Resume: record the real clock time
+    state.timerStartedAt = Date.now();
+    state.timerSecondsAtStart = state.timerSeconds;
     state.timerRunning = true;
     render();
     state.timerInterval = setInterval(() => {
-      state.timerSeconds--;
+      const elapsed = Math.floor((Date.now() - state.timerStartedAt) / 1000);
+      state.timerSeconds = Math.max(0, state.timerSecondsAtStart - elapsed);
+
       if (state.timerSeconds <= 0) {
         clearInterval(state.timerInterval);
         state.timerRunning = false;
